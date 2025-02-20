@@ -2,18 +2,28 @@ import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
   try {
-    const { entities, relationships } = await req.json();
+    const { prompt } = await req.json();
 
-    if (!entities || !relationships) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+    if (!prompt) {
+      return NextResponse.json({ error: "Missing prompt field" }, { status: 400 });
     }
 
-    // Generate ER diagram logic (replace with actual implementation)
-    const diagram = `<svg><!-- Generated ER diagram here --></svg>`;
+    // Call the Flask backend to generate the ER diagram
+    const response = await fetch("http://localhost:5000/generate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prompt }),
+    });
 
-    return NextResponse.json({ success: true, diagram });
+    const data = await response.json();
+
+    if (!response.ok) {
+      return NextResponse.json({ error: "Failed to generate diagram" }, { status: 500 });
+    }
+
+    return NextResponse.json({ success: true, diagram: data.diagram });
   } catch (error) {
-    console.error("Error:", error);
+    console.error("Error generating ER diagram:", error);
     return NextResponse.json({ error: "Failed to generate diagram" }, { status: 500 });
   }
 }
